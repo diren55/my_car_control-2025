@@ -1,0 +1,119 @@
+TebLocalPlannerROS:
+  # 里程计话题
+  odom_topic: odom_combined
+    
+  # 轨迹参数（优化：放宽约束，提高可行性）
+  teb_autosize: True
+  dt_ref: 0.3
+  dt_hysteresis: 0.1
+  max_samples: 500
+  global_plan_overwrite_orientation: True
+  allow_init_with_backwards_motion: False  # 不允许后退（用户要求）
+  max_global_plan_lookahead_dist: 3.0
+  global_plan_viapoint_sep: -1
+  global_plan_prune_distance: 1
+  exact_arc_length: False
+  feasibility_check_no_poses: 3  # 降低检查点数量（从5降到3），减少误判
+  publish_feedback: False
+    
+  # 机器人速度限制（优化：放宽加速度限制）
+  max_vel_x: 0.4
+  max_vel_x_backwards: 0.2
+  max_vel_y: 0.0
+  max_vel_theta: 0.3
+  acc_lim_x: 1.0  # 增大加速度限制（从0.5到1.0），允许更快的速度变化
+  acc_lim_theta: 1.0  # 增大角加速度限制（从0.5到1.0），允许更快的转向
+  min_turning_radius: 0.0  # 差速驱动机器人（可以原地转向）
+
+  # 机器人足迹模型
+  footprint_model:
+    type: "point"
+
+  # 目标容差（优化：放宽容差）
+  xy_goal_tolerance: 0.3  # 增大位置容差（从0.2到0.3），更容易到达目标
+  yaw_goal_tolerance: 0.2  # 增大角度容差（从0.1到0.2），更容易完成转向
+  free_goal_vel: False
+  complete_global_plan: True
+    
+  # 障碍物参数（优化：降低障碍物要求）
+  min_obstacle_dist: 0.15  # 降低最小障碍物距离（从0.25到0.15），允许更靠近障碍物
+  inflation_dist: 0.4  # 降低膨胀距离（从0.6到0.4），减少障碍物影响范围
+  include_costmap_obstacles: True
+  costmap_obstacles_behind_robot_dist: 1.5
+  obstacle_poses_affected: 10  # 减少受影响的障碍物点数（从15到10），降低计算负担
+
+  # 动态障碍物
+  dynamic_obstacle_inflation_dist: 0.4  # 降低动态障碍物膨胀距离
+  include_dynamic_obstacles: True
+
+  # 代价地图转换器（用于处理动态障碍物）
+  costmap_converter_plugin: "costmap_converter::CostmapToLinesDBSRANSAC"
+  costmap_converter_spin_thread: True
+  costmap_converter_rate: 5
+
+  # 优化参数（优化：增加迭代次数，提高优化质量）
+  no_inner_iterations: 10  # 增加内层迭代次数（从5到10），提高优化质量
+  no_outer_iterations: 5  # 增加外层迭代次数（从4到5），提高优化质量
+  optimization_activate: True
+  optimization_verbose: False
+  penalty_epsilon: 0.1
+  obstacle_cost_exponent: 4
+  weight_max_vel_x: 2
+  weight_max_vel_theta: 1
+  weight_acc_lim_x: 1
+  weight_acc_lim_theta: 1
+  weight_kinematics_nh: 1000
+  weight_kinematics_forward_drive: 1
+  weight_kinematics_turning_radius: 1
+  weight_optimaltime: 1  # 必须 > 0
+  weight_shortest_path: 0
+  weight_obstacle: 50  # 降低障碍物权重（从100到50），减少障碍物对轨迹的影响
+  weight_inflation: 0.1  # 降低膨胀权重（从0.2到0.1）
+  weight_dynamic_obstacle: 5  # 降低动态障碍物权重（从10到5）
+  weight_dynamic_obstacle_inflation: 0.1  # 降低动态障碍物膨胀权重
+  weight_viapoint: 1
+  weight_adapt_factor: 2
+
+  # 同伦类规划（优化：增加同伦类数量，提供更多路径选择）
+  enable_homotopy_class_planning: True
+  enable_multithreading: True
+  max_number_classes: 6  # 增加同伦类数量（从4到6），提供更多路径选择
+  selection_cost_hysteresis: 1.0
+  selection_prefer_initial_plan: 0.9
+  selection_obst_cost_scale: 50.0  # 降低障碍物成本缩放（从100.0到50.0）
+  selection_alternative_time_cost: False
+ 
+  roadmap_graph_no_samples: 15
+  roadmap_graph_area_width: 5
+  roadmap_graph_area_length_scale: 1.0
+  h_signature_prescaler: 0.5
+  h_signature_threshold: 0.1
+  obstacle_heading_threshold: 0.45
+  switching_blocking_period: 0.0
+  viapoints_all_candidates: True
+  delete_detours_backwards: True
+  max_ratio_detours_duration_best_duration: 3.0
+  visualize_hc_graph: False
+  visualize_with_time_as_z_axis_scale: False
+
+  # 恢复行为（优化：启用恢复机制）
+  shrink_horizon_backup: True
+  shrink_horizon_min_duration: 10
+  oscillation_recovery: True
+  oscillation_v_eps: 0.1
+  oscillation_omega_eps: 0.1
+  oscillation_recovery_min_duration: 10
+  oscillation_filter_duration: 10
+
+  # 代价地图转换器参数
+  costmap_converter/CostmapToLinesDBSRANSAC:
+    cluster_max_distance: 0.4
+    cluster_min_pts: 2
+    ransac_inlier_distance: 0.15
+    ransac_min_inliers: 10
+    ransac_no_iterations: 1500
+    ransac_remainig_outliers: 3
+    ransac_convert_outlier_pts: True
+    ransac_filter_remaining_outlier_pts: False
+    convex_hull_min_pt_separation: 0.1
+

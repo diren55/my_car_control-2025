@@ -1,0 +1,7 @@
+# 感知节点参数配置（基于NCSC2024源程序main.py）
+# 注意：所有参数已移动到代码中硬编码，此文件不再使用
+perception_node:
+  ros__parameters:
+    # 所有参数已在 perception_node.py 中硬编码
+    # 占位参数（ROS2要求ros__parameters下至少有一个参数）
+    placeholder: null

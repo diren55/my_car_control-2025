@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    # 速度参数
+    linear_speed: 0.2      # 前进线速度 (m/s)
+    angular_speed: 0.5     # 转向角速度 (rad/s)
+    
+    # 安全距离
+    safe_distance: 0.5     # 安全停止距离 (m)
+    
+    # 其他参数可以在这里添加
+    # 例如:
+    # pid_kp: 1.0
+    # pid_ki: 0.0
+    # pid_kd: 0.5
+
