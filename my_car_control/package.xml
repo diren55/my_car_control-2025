@@ -7,22 +7,36 @@
   <maintainer email="user@example.com">davinci-mini</maintainer>
   <license>Apache-2.0</license>
 
-  <!-- 依赖项 -->
+  <!-- =============================================================== -->
+  <!-- ROS2 消息/服务依赖                                               -->
+  <!-- =============================================================== -->
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>                       <!-- 2025 补：control_node.py 用 std_srvs.srv.Empty -->
   <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>visualization_msgs</depend>
+  <depend>cartographer_ros_msgs</depend>          <!-- 2025 补：control_node.py 用 WriteState/FinishTrajectory -->
 
-  <!-- 构建工具依赖 -->
+  <!-- =============================================================== -->
+  <!-- bag 工具依赖（2025 新增 bag_to_csv 离线工具用）                  -->
+  <!-- =============================================================== -->
+  <exec_depend>rosbag2_py</exec_depend>           <!-- bag_to_csv.py 读 ros2 bag -->
+  <exec_depend>rosidl_runtime_py</exec_depend>    <!-- bag_to_csv.py 反序列化消息 -->
+
+  <!-- =============================================================== -->
+  <!-- 构建工具                                                          -->
+  <!-- =============================================================== -->
   <buildtool_depend>ament_python</buildtool_depend>
 
-  <!-- 测试依赖 -->
+  <!-- =============================================================== -->
+  <!-- 测试依赖                                                          -->
+  <!-- =============================================================== -->
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
@@ -32,4 +46,3 @@
     <build_type>ament_python</build_type>
   </export>
 </package>
-
