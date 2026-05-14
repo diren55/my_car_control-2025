@@ -133,7 +133,7 @@ class TrackMemoryRecorder(Node):
             'x', 'y', 'yaw', 'v',
             'target_x', 'target_y', 'target_mode', 'target_raw_x',
             'cmd_speed', 'cmd_steer',
-            'red_light', 'ab_sign', 'yellow_line', 'ab_direction',
+            'red_light', 'ab_sign', 'yellow_line', 'ab_direction', 'blue_cones',
             'scan_point_count',
         ])
         self.csv_file.flush()
@@ -198,13 +198,18 @@ class TrackMemoryRecorder(Node):
         self.last_cmd = {'speed': msg.linear.x, 'steer': msg.angular.z}
 
     def cb_image_det(self, msg: Int16MultiArray):
-        # /image_detection 字段顺序（来自 image_detector.py 第 161 行注释）：
-        #   [红灯, A/B, 黄线, AB车库方向]
+        # /image_detection 字段顺序（来自 image_detector.py 第 1422 行实际构造）：
+        #   data[0] = 红灯       (0/1)
+        #   data[1] = A/B 牌     (0/1/2)
+        #   data[2] = 黄线       (0/1)
+        #   data[3] = AB 车库方向
+        #   data[4] = 蓝色锥桶/直角弯标志（image_detector 在发但 control_node
+        #            未读取——这里也录下来，将来直角弯改造可能用得上）
         data = list(msg.data) if msg.data else []
         # 用 -1 填充，保证 CSV 列数稳定
-        while len(data) < 4:
+        while len(data) < 5:
             data.append(-1)
-        self.last_image_det = data[:4]
+        self.last_image_det = data[:5]
 
     def cb_scan(self, msg: LaserScan):
         # 只统计点数，不存全部点。如果想存全部点请用 ros2 bag record /scan。
@@ -248,9 +253,9 @@ class TrackMemoryRecorder(Node):
             cst = self.last_cmd['steer']
 
         if self.last_image_det is None:
-            rl = ab = yl = abd = -1
+            rl = ab = yl = abd = bc = -1
         else:
-            rl, ab, yl, abd = self.last_image_det
+            rl, ab, yl, abd, bc = self.last_image_det
 
         # 当处于特殊模式时，target_x_raw 是魔法数字而不是真实坐标。
         # CSV 里同时保留"展示用"的 target_x/y（NaN 替代魔法数字）
@@ -274,7 +279,7 @@ class TrackMemoryRecorder(Node):
             round(target_x_raw, 4),
             round(cs, 4) if not math.isnan(cs) else 'nan',
             round(cst, 4) if not math.isnan(cst) else 'nan',
-            rl, ab, yl, abd,
+            rl, ab, yl, abd, bc,
             self.last_scan_pt_count,
         ]
         self.csv_writer.writerow(row)
