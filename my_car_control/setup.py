@@ -56,6 +56,9 @@ setup(
             # bag录制和回放工具
             'record_bag = my_car_control.scripts.record_bag:main',  # 录制bag文件
             'play_bag = my_car_control.scripts.play_bag:main',  # 回放bag文件
+            # === 2025 改造：被动观察 + 离线调试基础设施 ===
+            'track_memory_recorder = my_car_control.track_memory_recorder:main',  # 被动记录每帧状态到CSV（不影响控制）
+            'track_memory_viewer = my_car_control.track_memory_viewer:main',  # 离线重画CSV（迁移自2022 debug方法论）
         ],
     },
 )
