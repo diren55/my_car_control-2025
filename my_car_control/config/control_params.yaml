@@ -2,10 +2,23 @@
 control_node:
   ros__parameters:
     
-    # === V7: 黄线弯（无锥桶）专用参数 ===
-    # 最终角度 = 75 + 27 = 102度 (减小1度：28->27)
-    yellow_curve_angle: 27.0
-    yellow_curve_speed: 25  # 黄线弯固定速度档位（改为25档）
+    # =========================================================================
+    # WARNING: yellow_curve_angle / yellow_curve_speed —— YAML 不生效（陷阱）
+    # =========================================================================
+    # 这两个参数在 YAML 里写了但 control_node.py 第 196-197 行没用
+    # declare_parameter() 接通，而是直接硬编码：
+    #     self.yellow_curve_angle = 25.0
+    #     self.yellow_curve_speed = 25
+    # 所以改 YAML 这里完全不生效，实际跑的就是代码硬编码的 25.0/25。
+    #
+    # 原 YAML 写 27.0，已修正为 25.0 与代码硬编码一致（YAML 本来就不生效，
+    # 此改动不影响实际行为，只是避免误导）。
+    #
+    # 未来若要让 YAML 真的可调：改 control_node.py 第 196-197 行用
+    # declare_parameter() 替换硬编码即可（小风险代码改动，建议上车实测后再做）。
+    # =========================================================================
+    yellow_curve_angle: 25.0            # 死参数，与代码硬编码一致
+    yellow_curve_speed: 25              # 死参数，与代码硬编码一致
     
     # === V8: 向右修正（三等分点为空）专用转向角 ===
     # 当内外道配对失败或外道点被过滤时，向右转向寻找外道锥桶
@@ -77,3 +90,38 @@ control_node:
     turn_theta_75: [45, 47]
     turn_theta_80: [55, 60]
     turn_theta_85: [100, 100]
+    # =========================================================================
+    # 2025 改造补：以下参数原本在 control_node.py declare_parameter 了但
+    #             control_params.yaml 没显式列出，导致只能用代码默认值不能
+    #             从 YAML 调。补在这里让所有可调参数一目了然。值与 control
+    #             _node.py 的 declare_parameter 默认值完全一致，行为不变。
+    # =========================================================================
+
+    # ----- 红灯停车 -----
+    target_stop_duration: 4.0           # 红灯停车持续时间（秒）
+
+    # ----- XY 坐标停车（check_xy_parking 机制）-----
+    # 当前未启用：enable_xy_parking=False, park_points=[]
+    # park_points 格式: [[x, y, tolerance(米), duration(秒), circle], ...]
+    # 警告：依赖 self.circle，但 control_node.py 当前 self.circle 永远=1，
+    #      所以即使启用，配 circle=2 的停车点也永远不会触发。
+    # 不确定：比赛时学长是否通过其它方式启用过这个机制（如命令行参数、
+    #        修改过的 yaml），rar 里这份代码默认是关闭的。
+    enable_xy_parking: False
+    park_points: []
+
+    # ----- 坐标打印（用于手推车标定停车点坐标）-----
+    print_position: True
+    position_print_interval: 0.5        # 打印间隔（秒）
+
+    # ----- NavigationManager 第一圈记录 + 第二圈回放 -----
+    # 当前状况：control_node.py 第 1345 行调了 start_recording() 启动累积，
+    #          但代码里没有任何地方调 save_points_to_csv() 或
+    #          load_points_from_csv()，所以 CSV 文件永远不生成，
+    #          第二圈回放永远不会发生。整套 NavigationManager 是"摆设"，
+    #          但代码完整，未来要启用只需要补 save/load 的触发点。
+    enable_navigation_recording: True
+    record_interval: 0.5                # 第一圈记录间隔（秒）
+    navigation_csv_path: '~/navigation_points.csv'
+    navigation_min_distance: 0.8        # 第二圈到达目标点的最小距离（米）
+    enable_navigation_loop: True
