@@ -60,6 +60,7 @@ setup(
             'track_memory_recorder = my_car_control.track_memory_recorder:main',  # 被动记录每帧状态到CSV（不影响控制）
             'track_memory_viewer = my_car_control.track_memory_viewer:main',  # 离线重画CSV（迁移自2022 debug方法论）
             'bag_to_csv = my_car_control.bag_to_csv:main',  # 离线把 rosbag2 转成 TrackMemory CSV 格式
+            'ab_vote_node = my_car_control.ab_vote_node:main',  # 2025 改造：A/B 牌投票+combo锁定（迁移自2022国一）
         ],
     },
 )
