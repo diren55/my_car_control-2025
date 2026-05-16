@@ -1,91 +1,101 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-感知+控制节点启动文件
-功能: 同时启动感知节点（简单聚类）和控制节点
+感知 + 视觉 + 控制 主 launch（默认入口，不带 A/B 投票）
+================================================================================
+启动节点：
+  - perception_node_simple_cluster   ← 加载 perception_params.yaml
+  - image_detector                    ← 当前硬编码 HSV 阈值（未来可改）
+  - control_node                      ← 加载 control_params.yaml【本次新增】
 
-使用方法:
-    # 用 YAML 默认值
-    ros2 launch my_car_control perception_control.launch.py
+如要启用 A/B 投票后处理：用 perception_control_with_ab_vote.launch.py 替代。
 
-    # 命令行覆盖某个 YAML 参数
-    ros2 launch my_car_control perception_control.launch.py \\
-        cluster_radius:=0.3 enable_mapping:=false
-
-参数优先级（后者覆盖前者）：
-    1. perception_node_simple_cluster.py 里 declare_parameter 的默认值
-    2. config/perception_params.yaml（本 launch 加载）
-    3. 命令行 launch 参数（仅显式列出的 4 个）
+================================================================================
+2025 改造说明：
+  - 原版（ba5a143）不加载 control_params.yaml，导致 control_node 完全用代码
+    declare_parameter 默认值，YAML 调参看似可调实际无效。
+  - 本次修复：control_node 加上 parameters=[control_config]，让 YAML 生效。
+  - 行为不变：control_params.yaml 默认值与 control_node.py declare_parameter
+    默认值已对齐。
+================================================================================
 """
-
-import os
-from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
 
 
 def generate_launch_description():
-    # ========== YAML 配置文件路径 ==========
-    perception_config = os.path.join(
-        get_package_share_directory('my_car_control'),
-        'config',
-        'perception_params.yaml'
-    )
+    pkg_dir = get_package_share_directory('my_car_control')
+    perception_config = os.path.join(pkg_dir, 'config', 'perception_params.yaml')
+    control_config = os.path.join(pkg_dir, 'config', 'control_params.yaml')
 
-    # ========== 常用快捷参数（命令行可覆盖 YAML 值）==========
-    # 这些是经常调的几个，写成 launch args 方便快速 A/B 测。
-    # 其它 23 个参数请改 perception_params.yaml 后重启节点。
+    # --- launch 参数（与原版一致）---
     cluster_radius_arg = DeclareLaunchArgument(
         'cluster_radius', default_value='0.25',
-        description='聚类半径（米），覆盖 YAML 中同名参数'
-    )
-    min_points_per_cluster_arg = DeclareLaunchArgument(
-        'min_points_per_cluster', default_value='5',
-        description='每个簇最少点数，覆盖 YAML 中同名参数'
-    )
+        description='聚类半径阈值（米）')
+    min_points_arg = DeclareLaunchArgument(
+        'min_points', default_value='1',
+        description='聚类最小点数')
     enable_mapping_arg = DeclareLaunchArgument(
-        'enable_mapping', default_value='false',
-        description='是否启用 matplotlib 可视化（比赛建议 false）'
-    )
+        'enable_mapping', default_value='False',
+        description='是否启用建图模式')
     show_window_arg = DeclareLaunchArgument(
-        'show_window', default_value='true',
-        description='是否弹窗，无图形环境必须 false'
-    )
+        'show_window', default_value='True',
+        description='是否显示 matplotlib 可视化窗口')
 
-    # ========== 节点定义 ==========
-    # 参数加载顺序：先 YAML 文件，再命令行覆盖（dict 在 list 末尾覆盖前者）
+    # ====================================================================
+    # 1. 感知节点（简单聚类版，加载 YAML）
+    # ====================================================================
     perception_node = Node(
         package='my_car_control',
         executable='perception_node_simple_cluster',
         name='perception_node',
+        output='screen',
+        emulate_tty=True,
         parameters=[
-            perception_config,                           # 1) 加载 YAML 27 个参数
-            {                                            # 2) 命令行覆盖
+            perception_config,
+            {
                 'cluster_radius': LaunchConfiguration('cluster_radius'),
-                'min_points_per_cluster': LaunchConfiguration('min_points_per_cluster'),
+                'min_points': LaunchConfiguration('min_points'),
                 'enable_mapping': LaunchConfiguration('enable_mapping'),
                 'show_window': LaunchConfiguration('show_window'),
-            },
+            }
         ],
-        output='screen'
     )
 
+    # ====================================================================
+    # 2. 视觉识别节点
+    # ====================================================================
+    image_detector_node = Node(
+        package='my_car_control',
+        executable='image_detector',
+        name='image_detector',
+        output='screen',
+        emulate_tty=True,
+    )
+
+    # ====================================================================
+    # 3. 控制节点（加载 control_params.yaml）【2025 改造修复点】
+    # ====================================================================
     control_node = Node(
         package='my_car_control',
         executable='control_node',
         name='control_node',
-        output='screen'
+        output='screen',
+        emulate_tty=True,
+        parameters=[control_config],
     )
 
-    # ========== 返回 LaunchDescription ==========
     return LaunchDescription([
         cluster_radius_arg,
-        min_points_per_cluster_arg,
+        min_points_arg,
         enable_mapping_arg,
         show_window_arg,
         perception_node,
+        image_detector_node,
         control_node,
     ])
