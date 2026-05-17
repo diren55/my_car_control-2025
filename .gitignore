@@ -1,0 +1,72 @@
+# =============================================================================
+# Git 忽略规则
+# -----------------------------------------------------------------------------
+# 永久避免备份包、构建产物、运行时数据、编辑器临时文件入 git。
+# =============================================================================
+
+# ---- 压缩包 / 备份 ----
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# ---- Python 缓存与构建产物 ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# ---- colcon / ROS2 构建产物（车上构建会产生，不应入 git）----
+build/
+install/
+log/
+
+# ---- 运行时产生的数据（CSV / bag / 图像 / 地图）----
+track_memory/
+track_memory_*.csv
+*.bag
+*.db3
+*.mcap
+bag_*/
+baseline_*/
+*.pbstream
+*.pcd
+navigation_points*.csv
+maps/
+
+# ---- 系统/编辑器临时文件 ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ---- PowerShell / shell 误重定向常见残留 ----
+# 单字母文件名（h / tatus / og / iff 这种被命令切割剩下的）
+/h
+/og
+/tatus
+/iff
+/tatus.txt
+
+# ---- 个人临时文件 ----
+scratch/
+tmp/
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ---- 不忽略的（白名单豁免）----
+# Markdown、YAML、Python 源代码都正常跟踪
+!*.md
+!*.yaml
+!*.yml
+!*.py

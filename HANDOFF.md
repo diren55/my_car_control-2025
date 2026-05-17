@@ -2,9 +2,9 @@
 
 > **本文件目的**：让接手的 AI 或队员在一个文档里就能完整理解项目状态、决策依据、已做和待做工作，不必再翻几十轮对话。
 >
-> **当前进度**：stage1 工程化基建已落地（14 commits）。准备进入 Stage 0（上车数据收集）。
+> **当前进度**：stage1 工程化基建已落地（15+ commits）。准备进入 Stage 0（上车数据收集）。
 >
-> **最近更新**：2026-05-16
+> **最近更新**：2026-05-16（已核查 control_only/full_system/modular_system 三个 launch 的 YAML 传参状况）
 
 ---
 
@@ -204,9 +204,13 @@
 - 两个节点各自 odom 归零（理论冗余实际无 bug，不动）
 - `cut_length_y` 在 YAML 值是 0.8，原 22 年值是 0.7，差异未澄清
 - `image_detector` HSV 阈值硬编码（未来可参数化）
-- 多个 launch 文件的 `default_value=...` 用法可能存在不真传给 Node 的隐患（待核查）
 
-### 5.4 ⚪ 未确认的关键事实（需要问学长 / 上车）
+### 5.4 ✅ 已核查无问题（更新自第一版 HANDOFF.md）
+
+- 之前担心 `control_only/full_system/modular_system` 三个 launch 可能 `default_value=...` 只是 launch arg 不真传给 Node。**经 grep 核查：三个文件的 control_node Node 段都正确写了 `parameters=[control_config]`**，YAML 真的传到位了。只有原版 `perception_control.launch.py` 是真坑（已修复 commit aacd907）。
+- 这是个**积极信号**：25 届学长的 launch 文件大部分是工程正确的，坑没有想象中多。
+
+### 5.5 ⚪ 未确认的关键事实（需要问学长 / 上车）
 
 - 比赛实际跑的是哪个 launch？（推测 `full_system.launch.py` 但不确定）
 - 圈数切换逻辑是什么时候、为什么注释掉的？
@@ -216,11 +220,13 @@
 
 ---
 
-## 6. 已完成的工作（14 commits 时间线）
+## 6. 已完成的工作（commits 时间线）
 
 ```
-ce9748b  stage1: control_params.yaml 补 10 个缺失参数 + yellow_curve WARNING
+xxxxxxx  stage1: 加 .gitignore（屏蔽备份包/colcon 构建产物/运行时数据/编辑器临时/误重定向残留）
+08347d5  stage1: 加 HANDOFF.md 完整交接报告（给下一个接手的 AI/队员用）
 aacd907  stage1: perception_control.launch.py 加载 control_params.yaml
+ce9748b  stage1: control_params.yaml 补 10 个缺失参数 + yellow_curve WARNING
 9cc89c1  stage1: cut_length_y/x 加 WARNING 注释（标历史档案）
 f84eb3a  stage1: 加 csv_diff.py 离线 TrackMemory CSV A/B 对比工具
 ef671a5  fix: 删除误重定向产生的 h 文件
@@ -241,6 +247,7 @@ ba5a143  stage1: 复活 perception_params.yaml（27 个参数）+ launch 改为�
 - ✅ **零运行时影响**：到目前为止所有改动都是"新增 / 注释 / 配置 / YAML 默认值不变"，不影响车的实际行为
 - ✅ **github 远程同步**：所有 commit 已 push 到远程
 - ✅ **统一行尾**：.gitattributes 强制 LF，Windows/Linux 协作不会再有 CRLF 警告
+- ✅ **垃圾自动屏蔽**：.gitignore 屏蔽备份包/构建产物/运行时数据/编辑器临时文件
 
 ### 已搭建的工具链（这些工具是后续所有改动的"验证基础设施"）
 
@@ -257,28 +264,19 @@ ba5a143  stage1: 复活 perception_params.yaml（27 个参数）+ launch 改为�
 
 ## 7. 剩余的离线小风险改动（按优先级）
 
-接手 AI 在没车的情况下可以继续做的工作，按风险↑ 价值↓：
+接手 AI 在没车的情况下可以继续做的工作：
 
-| # | 任务 | 风险 | 工作量 | 价值 |
-|---|------|------|------|------|
-| A | 核查 `control_only/full_system/modular_system` 三个 launch 是否真的把 `control_config` 传给了 Node（用 `default_value=...` 只是 launch arg，不一定真传）| 零（只读）| 10 分钟 | ⭐⭐⭐⭐ |
-| B | 整理 13 个 launch 文件的关系图，决定金线 launch | 零 | 30 分钟 | ⭐⭐⭐ |
-| C | 写 README_USAGE.md（13 个 launch 各自用途 + 推荐使用流程）| 零 | 30 分钟 | ⭐⭐⭐ |
-| D | 离线 HSV 调试工具（读单张图，三滑块调 H/S/V 阈值实时显示 mask）| 零 | 1 小时 | ⭐⭐⭐ |
-| E | 整理 `image_detector.py` 的 HSV 硬编码值列表，准备未来 YAML 化 | 零 | 30 分钟 | ⭐⭐ |
+| # | 任务 | 风险 | 工作量 | 价值 | 状态 |
+|---|------|------|------|------|------|
+| ~~A~~ | ~~核查三个 launch 是否真传 control_config~~ | - | - | - | ✅ 已完成，见 5.4 |
+| B | 整理 13 个 launch 文件关系图 + 决定金线 launch | 零 | 30 分钟 | ⭐⭐⭐⭐ |  |
+| C | 写 LAUNCH_GUIDE.md（13 个 launch 各自用途 + 推荐使用流程）| 零 | 30 分钟 | ⭐⭐⭐⭐ | 建议与 B 合并 |
+| D | 离线 HSV 调试工具（读单张图，三滑块调 H/S/V 阈值实时显示 mask）| 零 | 1 小时 | ⭐⭐⭐ |  |
+| E | 整理 `image_detector.py` 的 HSV 硬编码值列表，准备未来 YAML 化 | 零 | 30 分钟 | ⭐⭐ |  |
 
-### **明确推荐先做 A**：
+### 推荐先做 B+C 合并：LAUNCH_GUIDE.md
 
-之前 grep 显示三个 launch 都 `default_value=os.path.join(..., 'control_params.yaml')`，但这只是 launch argument 的默认值，不是 `Node(parameters=[control_config])`。如果只是声明了 arg 但 Node 段没接收，那 YAML 改了仍然不生效。这跟 perception_control.launch.py 那个坑一模一样，但分布在 3 个文件里。
-
-操作：
-```powershell
-Select-String -Path my_car_control\launch\control_only.launch.py -Pattern "parameters" -Context 1,3
-Select-String -Path my_car_control\launch\full_system.launch.py -Pattern "parameters" -Context 1,3
-Select-String -Path my_car_control\launch\modular_system.launch.py -Pattern "parameters" -Context 1,3
-```
-
-看每个 launch 的 control_node Node 段是否真的 `parameters=[LaunchConfiguration('control_config')]` 或类似。
+13 个 launch 文件谁是入口、谁加载什么 YAML、推荐用哪个，目前散落在代码里。整理成一份文档对**上车决策**和**下一个 AI**都极有价值。
 
 ---
 
@@ -360,13 +358,15 @@ Select-String -Path my_car_control\launch\modular_system.launch.py -Pattern "par
 
 - 用户在 Windows + VSCode + PowerShell
 - 仓库路径：`C:\Users\23998\Documents\xwechat_files\wxid_c50e3xrrui522_164e\msg\file\2026-05\my_car_control`
-- **PowerShell 陷阱**：
+- **PowerShell 陷阱**（已踩过的）：
   - 不支持 `&&`，用分号 `;` 或分多行
   - 命令复制粘贴后必须按 Enter 让光标到新行再粘下一条，否则会粘连出错
   - 不要给注释和命令混合的代码块（`# xxx` + `command`），用户经常把注释一起粘上去
   - PowerShell 显示 UTF-8 中文会乱码（`type` 命令），让用户用 VSCode 看文件
   - PowerShell 5 默认 `>` 是 UTF-16，文本文件别用 `> file.txt`（会乱码），用 `Out-File -Encoding utf8`
   - `git config --global core.pager ""` 关闭分页（已设过但偶尔会忘）
+  - **Windows 复制点开头文件会丢点**：`.gitignore` 复制后变 `gitignore`，需要 `Rename-Item gitignore .gitignore` 修
+  - **PowerShell 误重定向**：命令拼写错或粘连时容易触发 `> 文件名`，产生 `h` / `tatus` 这种残留文件。.gitignore 已屏蔽常见单字母残留
 
 ### 10.3 文件位置易错点
 
@@ -376,6 +376,7 @@ Select-String -Path my_car_control\launch\modular_system.launch.py -Pattern "par
 my_car_control/              ← Git 仓库根（PowerShell 当前位置）
 ├── .git/
 ├── .gitattributes           ← 仓库级文件放这
+├── .gitignore               ← 仓库级文件放这
 ├── HANDOFF.md               ← 本文件
 └── my_car_control/          ← ROS 包根
     ├── config/              ← YAML 参数文件放这
@@ -409,7 +410,7 @@ my_car_control/              ← Git 仓库根（PowerShell 当前位置）
 
 ### 11.1 如果接手时用户还没有车
 
-继续做剩下的离线小风险改动（第 7 节 A-E）。**不要碰山大路线代码**——没有 Stage 0 数据，写出来的 memory_replay 都是空中楼阁。
+继续做剩下的离线小风险改动（第 7 节 B-E）。**不要碰山大路线代码**——没有 Stage 0 数据，写出来的 memory_replay 都是空中楼阁。
 
 ### 11.2 如果用户拿到车
 
@@ -431,17 +432,17 @@ my_car_control/              ← Git 仓库根（PowerShell 当前位置）
 
 ## 12. 关键问题留给下一个交接
 
-接手 AI 在做完一轮工作后，**必须更新本文件的"下次交接的责任清单"小节**，让再下一个接手的人无缝衔接。包括：
+接手 AI 在做完一轮工作后，**必须更新本文件**，让再下一个接手的人无缝衔接。包括：
 
 1. 本轮做了什么（git commits 列表）
-2. 本轮发现了什么新事实（更新第 5 节问题清单）
+2. 本轮发现了什么新事实（更新第 5 节问题清单，把已核查的移到 5.4）
 3. 本轮放弃了什么尝试（让下一个人不重复）
 4. 当前 Stage 0 完成度
 5. 用户的下一次车上时间窗口
 
 ---
 
-## 13. 一些关键链接和文件指引
+## 13. 关键链接和文件指引
 
 | 类别 | 路径 |
 |------|------|
@@ -459,8 +460,6 @@ my_car_control/              ← Git 仓库根（PowerShell 当前位置）
 ## 附录 A：14 项考古发现（详细版）
 
 > 这是 stage1 期间对 25 年代码 + 22 年代码做的系统对比，所有发现都已 grep / view 验证。
-
-(此处保留以备未来需要查 detail 时使用，由于太长不在本主文档展开，建议接手 AI 翻 git 对话历史查找"重大发现 #N"系列内容)
 
 主要发现摘要：
 
@@ -485,14 +484,15 @@ my_car_control/              ← Git 仓库根（PowerShell 当前位置）
 
 接手 AI 上手后，先快速跑一遍这个清单确认理解正确：
 
-- [ ] `git log --oneline` 显示 14 个 commit 一条直线，HEAD 在 master，tag `v0-baseline` 在最初
+- [ ] `git log --oneline` 显示 16+ 个 commit 一条直线，HEAD 在 master，tag `v0-baseline` 在最初
 - [ ] `git status` 显示 `working tree clean`，远程已同步
 - [ ] `my_car_control/my_car_control/` 下应有 `track_memory_recorder.py` / `track_memory_viewer.py` / `bag_to_csv.py` / `csv_diff.py` / `ab_vote_node.py` 五个新文件
 - [ ] `my_car_control/launch/` 下应有 `perception_control_with_ab_vote.launch.py` / `track_memory.launch.py` 两个新 launch
 - [ ] `my_car_control/config/perception_params.yaml` 顶部和 `cut_length` 处有 WARNING 注释
 - [ ] `my_car_control/config/control_params.yaml` 在 `yellow_curve` 处有 WARNING + 末尾有 10 个补充参数
 - [ ] `my_car_control/setup.py` `entry_points` 里有 5 个新 entry
-- [ ] `.gitattributes` 在仓库根存在
+- [ ] `.gitattributes` 和 `.gitignore` 在仓库根存在
+- [ ] `HANDOFF.md` 在仓库根存在，本文件
 - [ ] `package.xml` 有 cartographer_ros_msgs / std_srvs / rosbag2_py / rosidl_runtime_py
 
 如所有项 ✅，说明状态正确，可以开始下一阶段工作。
